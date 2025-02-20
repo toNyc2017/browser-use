@@ -1,7 +1,7 @@
 """
 Playwright browser on steroids.
 """
-
+from datetime import datetime
 import pdb
 import asyncio
 import base64
@@ -610,6 +610,8 @@ class BrowserContext:
 		"""Get the current state of the browser"""
 		await self._wait_for_page_and_frames_load()
 		session = await self.get_session()
+		#print('stopping to investigate')
+		#pdb.set_trace()
 		session.cached_state = await self._update_state(use_vision=use_vision)
 
 		# Save cookies if a file is specified
@@ -653,15 +655,15 @@ class BrowserContext:
 			pixels_above, pixels_below = await self.get_scroll_info(page)
 
 
-
+			timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 			screenshot_filename = f'full_page_screenshot_{timestamp}.png'
 			screenshot_path = os.path.join('/Users/tomolds/first-agent/browser-use/screenshots', screenshot_filename)
 
-			with open(screenshot_path, 'wb') as f:
-				f.write(base64.b64decode(screenshot_b64))
+			#with open(screenshot_path, 'wb') as f:
+			#	f.write(base64.b64decode(screenshot_b64))
 
-			print(f'Screenshot saved to {screenshot_path}')
-			pdb.set_trace()
+			#print(f'Screenshot saved to {screenshot_path}')
+			#pdb.set_trace()
 
 			self.current_state = BrowserState(
 				element_tree=content.element_tree,

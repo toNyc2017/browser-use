@@ -1,9 +1,25 @@
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 
 
 # Action Input Models
+class CreateFileAction(BaseModel):
+    file_path: Optional[str] = None
+
+class AppendToFileAction(BaseModel):
+    file_path: Optional[str] = None
+    text: str
+
+class SaveFileToLocalAction(BaseModel):
+    source_path: str
+    dest_path: str
+
+class TakeAndSaveScreenshotAction(BaseModel):
+    file_path: Optional[str] = None  # Optional; if not provided, use default from env vars
+    full_page: Optional[bool] = False  # Option to capture the full page
+
+
 class SearchGoogleAction(BaseModel):
 	query: str
 
@@ -45,20 +61,3 @@ class ScrollAction(BaseModel):
 
 class SendKeysAction(BaseModel):
 	keys: str
-
-
-class NoParamsAction(BaseModel):
-	"""
-	Accepts absolutely anything in the incoming data
-	and discards it, so the final parsed model is empty.
-	"""
-
-	@model_validator(mode='before')
-	def ignore_all_inputs(cls, values):
-		# No matter what the user sends, discard it and return empty.
-		return {}
-
-	class Config:
-		# If you want to silently allow unknown fields at top-level,
-		# set extra = 'allow' as well:
-		extra = 'allow'

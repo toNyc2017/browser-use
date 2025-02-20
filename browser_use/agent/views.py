@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pdb
 import json
 import traceback
 from dataclasses import dataclass
@@ -123,6 +124,7 @@ class AgentHistoryList(BaseModel):
 
 	def save_to_file(self, filepath: str | Path) -> None:
 		"""Save history to JSON file with proper serialization"""
+		pdb.set_trace()
 		try:
 			Path(filepath).parent.mkdir(parents=True, exist_ok=True)
 			data = self.model_dump()

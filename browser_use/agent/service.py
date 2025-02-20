@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import pdb
 import asyncio
 import base64
@@ -58,6 +59,79 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T', bound=BaseModel)
 
 
+def append_history_to_file(history, base_file_path="agent_history_incremental.json"):
+    """
+    Appends the agent's history to a JSON file while:
+      - Removing screenshot data from each step's state.
+      - Inserting a timestamp into the file name so it's unique.
+      - Handling different history formats (an object with 'all_results',
+        a tuple containing a list, or a plain list).
+    """
+    try:
+        # 1. Create a timestamp string (e.g., "20250217_093012")
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        # 2. Insert the timestamp into the base file name before the extension
+        name, ext = os.path.splitext(base_file_path)
+        file_path = f"{name}_{timestamp}{ext}"
+
+        # 3. Determine the list of steps:
+        if hasattr(history, "all_results"):
+            steps = history.all_results
+        elif isinstance(history, tuple):
+            steps = None
+            for item in history:
+                if isinstance(item, list):
+                    steps = item
+                    break
+            if steps is None:
+                print("Error: Unrecognized history tuple format; no list found.")
+                return
+        elif isinstance(history, list):
+            steps = history
+        else:
+            print("Error: Unrecognized history format")
+            return
+
+        # Debug breakpoint to inspect steps
+        pdb.set_trace()  # Remove or comment out once debugging is complete
+
+        # 4. Function to sanitize a single step (remove screenshot data)
+        def sanitize_step(step):
+            # If the step is a string (or not a complex object), return it unchanged.
+            if isinstance(step, str):
+                return step
+            try:
+                # Use model_dump() if available (for Pydantic models); otherwise, use __dict__
+                step_dict = step.model_dump() if hasattr(step, "model_dump") else step.__dict__
+            except Exception:
+                # If conversion fails, convert the step to a string.
+                step_dict = str(step)
+            # Remove screenshot data if present in the 'state'
+            if isinstance(step_dict, dict) and "state" in step_dict:
+                state = step_dict["state"]
+                if isinstance(state, dict) and "screenshot" in state:
+                    state["screenshot"] = None
+            return step_dict
+
+        # 5. Sanitize each step.
+        new_entries = [sanitize_step(step) for step in steps]
+
+        # 6. Load existing history from file if it exists.
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                existing_history = json.load(f)
+        else:
+            existing_history = []
+
+        # 7. Append the new entries.
+        existing_history.extend(new_entries)
+
+        # 8. Write the combined history back to the file.
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(existing_history, f, indent=2)
+
+    except Exception as e:
+        print(f"Error appending to history file: {str(e)}")
 class Agent:
 	def __init__(
 		self,
@@ -67,7 +141,7 @@ class Agent:
 		browser_context: BrowserContext | None = None,
 		controller: Controller = Controller(),
 		use_vision: bool = True,
-		save_conversation_path: Optional[str] = None,
+		save_conversation_path: Optional[str] = '/Users/tomolds/first-agent/browser-use/conversations/conversation/agent_chat.txt',
 		save_conversation_path_encoding: Optional[str] = 'utf-8',
 		max_failures: int = 3,
 		retry_delay: int = 10,
@@ -220,16 +294,11 @@ class Agent:
 				return 'function_calling'
 			else:
 				return None
-		else:
-			return tool_calling_method
-
-	def add_new_task(self, new_task: str) -> None:
-		self.message_manager.add_new_task(new_task)
 
 	@time_execution_async('--step')
 	async def step(self, step_info: Optional[AgentStepInfo] = None) -> None:
 		"""Execute one step of the task"""
-		logger.info(f'📍 Step {self.n_steps}')
+		logger.info(f'\n📍 Step {self.n_steps}')
 		state = None
 		model_output = None
 		result: list[ActionResult] = []
@@ -243,10 +312,14 @@ class Agent:
 
 			self.message_manager.add_state_message(state, self._last_result, step_info)
 			input_messages = self.message_manager.get_messages()
-
+			#pdb.set_trace()
 			try:
 				model_output = await self.get_next_action(input_messages)
-
+				#custom_attributes = [attr for attr in dir(model_output) if not attr.startswith('__')]
+				#attributes = dir(model_output)
+				#model_output.current_state
+				#model_output.action
+				#pdb.set_trace()
 				if self.register_new_step_callback:
 					self.register_new_step_callback(state, model_output, self.n_steps)
 
@@ -268,6 +341,8 @@ class Agent:
 
 			if len(result) > 0 and result[-1].is_done:
 				logger.info(f'📄 Result: {result[-1].extracted_content}')
+				print('step function thinks we are done')
+				#pdb.set_trace()
 
 			self.consecutive_failures = 0
 
@@ -458,9 +533,10 @@ class Agent:
 	@observe(name='agent.run')
 	async def run(self, max_steps: int = 100) -> AgentHistoryList:
 		"""Execute the task with maximum number of steps"""
+		#pdb.set_trace()
 		try:
 			self._log_agent_run()
-			pdb.set_trace()
+
 			# Execute initial actions if provided
 			if self.initial_actions:
 				result = await self.controller.multi_act(self.initial_actions, self.browser_context, check_for_new_elements=False)
@@ -475,6 +551,8 @@ class Agent:
 					break
 
 				await self.step()
+				#pdb.set_trace()
+				append_history_to_file(self.history)
 
 				if self.history.is_done():
 					if self.validate_output and step < max_steps - 1:
@@ -482,6 +560,7 @@ class Agent:
 							continue
 
 					logger.info('✅ Task completed successfully')
+					#pdb.set_trace()
 					if self.register_done_callback:
 						self.register_done_callback(self.history)
 					break

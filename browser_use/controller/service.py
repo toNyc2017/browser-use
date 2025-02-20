@@ -1,3 +1,5 @@
+from pathlib import Path
+import os
 import pdb
 import asyncio
 import json
@@ -5,6 +7,7 @@ import logging
 from typing import Optional, Type
 
 from main_content_extractor import MainContentExtractor
+from playwright.async_api import Page
 from pydantic import BaseModel
 
 from browser_use.agent.views import ActionModel, ActionResult
@@ -16,16 +19,34 @@ from browser_use.controller.views import (
 	ExtractPageContentAction,
 	GoToUrlAction,
 	InputTextAction,
-	NoParamsAction,
 	OpenTabAction,
 	ScrollAction,
 	SearchGoogleAction,
 	SendKeysAction,
 	SwitchTabAction,
+	CreateFileAction,
+	AppendToFileAction,
+	SaveFileToLocalAction,
+	TakeAndSaveScreenshotAction,
+
 )
 from browser_use.utils import time_execution_async, time_execution_sync
 
 logger = logging.getLogger(__name__)
+
+
+
+#class CreateFileParams(BaseModel):
+#    file_path: Optional[str] = None
+
+#class AppendToFileParams(BaseModel):
+#    file_path: Optional[str] = None
+#    text: str
+
+#class SaveFileToLocalParams(BaseModel):
+#    source_path: str
+#    dest_path: str
+
 
 
 class Controller:
@@ -53,7 +74,113 @@ class Controller:
 			async def done(params: DoneAction):
 				return ActionResult(is_done=True, extracted_content=params.text)
 
-		# Basic Navigation Actions
+		######  ADDED BY TOM OLDS  2/16/2025
+			
+
+	# Create File Action
+		@self.registry.action('Create File', param_model=CreateFileAction)
+		async def create_file(params: CreateFileAction, browser: BrowserContext = None):
+			"""
+			Creates a new file if it doesn't exist.
+			If file_path is not provided, defaults will be used from environment variables.
+			"""
+			default_dir = os.getenv("DEFAULT_FILE_DIR", "/Users/tomolds/first-agent/browser-use/screenshots")
+			default_name = os.getenv("DEFAULT_FILE_NAME", "agent_output.txt")
+			file_path = params.file_path or os.path.join(default_dir, default_name)
+			try:
+				# Ensure directory exists
+				Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+				# Create file if it doesn't exist
+				if not os.path.exists(file_path):
+					with open(file_path, "w", encoding="utf-8") as f:
+						f.write("")
+				msg = f"File created at {file_path}"
+				logger.info(msg)
+				return ActionResult(extracted_content=msg, include_in_memory=True)
+			except Exception as e:
+				err_msg = f"Error in Create File: {str(e)}"
+				logger.error(err_msg)
+				return ActionResult(error=err_msg)
+
+		# Append to File Action
+		@self.registry.action('Append to File', param_model=AppendToFileAction)
+		async def append_to_file(params: AppendToFileAction, browser: BrowserContext = None):
+			"""
+			Appends text to an existing file.
+			If file_path is not provided, defaults will be used from environment variables.
+			"""
+			default_dir = os.getenv("DEFAULT_FILE_DIR", "/Users/tomolds/first-agent/browser-use/screenshots")
+			default_name = os.getenv("DEFAULT_FILE_NAME", "agent_output.txt")
+			file_path = params.file_path or os.path.join(default_dir, default_name)
+			try:
+				with open(file_path, "a", encoding="utf-8") as f:
+					f.write(params.text + "\n")
+				msg = f"Appended text to {file_path}"
+				logger.info(msg)
+				return ActionResult(extracted_content=msg, include_in_memory=True)
+			except Exception as e:
+				err_msg = f"Error in Append to File: {str(e)}"
+				logger.error(err_msg)
+				return ActionResult(error=err_msg)
+
+		# Save File To Local Action
+		@self.registry.action('Save File To Local', param_model=SaveFileToLocalAction)
+		async def save_file_to_local(params: SaveFileToLocalAction, browser: BrowserContext = None):
+			"""
+			Copies a file from a source path to a destination path.
+			"""
+			source_path = params.source_path
+			dest_path = params.dest_path
+			try:
+				# Ensure destination directory exists
+				Path(os.path.dirname(dest_path)).mkdir(parents=True, exist_ok=True)
+				with open(source_path, "r", encoding="utf-8") as src:
+					content = src.read()
+				with open(dest_path, "w", encoding="utf-8") as dst:
+					dst.write(content)
+				msg = f"Copied file from {source_path} to {dest_path}"
+				logger.info(msg)
+				return ActionResult(extracted_content=msg, include_in_memory=True)
+			except Exception as e:
+				err_msg = f"Error in Save File To Local: {str(e)}"
+				logger.error(err_msg)
+				return ActionResult(error=err_msg)	
+					
+		@self.registry.action('Take and Save Screenshot', param_model=TakeAndSaveScreenshotAction, requires_browser=True)
+		async def take_and_save_screenshot(params: TakeAndSaveScreenshotAction, browser: BrowserContext):
+			"""
+			Takes a screenshot of the current page and saves it to a file.
+			If file_path is not provided, uses the default directory and file name from environment variables.
+			"""
+			# Get defaults from environment variables
+			default_dir = os.getenv("DEFAULT_FILE_DIR", "/Users/tomolds/first-agent/browser-use/screenshots")
+			default_name = os.getenv("DEFAULT_SCREENSHOT_NAME", "screenshot.png")
+			file_path = params.file_path or os.path.join(default_dir, default_name)
+			
+			try:
+				# Ensure directory exists
+				Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+				
+				# Get the current page and take a screenshot.
+				page = await browser.get_current_page()
+				screenshot_options = {"path": file_path}
+				if params.full_page:
+					screenshot_options["full_page"] = True
+				
+				await page.screenshot(**screenshot_options)
+				
+				msg = f"Screenshot taken and saved at {file_path}"
+				logger.info(msg)
+				return ActionResult(extracted_content=msg, include_in_memory=True)
+			except Exception as e:
+				err_msg = f"Error in Take and Save Screenshot: {str(e)}"
+				logger.error(err_msg)
+				return ActionResult(error=err_msg)	
+				
+		#############################	
+			
+			
+			# Basic Navigation Actions
 		@self.registry.action(
 			'Search Google in the current tab',
 			param_model=SearchGoogleAction,
@@ -76,8 +203,8 @@ class Controller:
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
-		@self.registry.action('Go back', param_model=NoParamsAction, requires_browser=True)
-		async def go_back(_: NoParamsAction, browser: BrowserContext):
+		@self.registry.action('Go back', requires_browser=True)
+		async def go_back(browser: BrowserContext):
 			await browser.go_back()
 			msg = '🔙  Navigated back'
 			logger.info(msg)
@@ -226,6 +353,7 @@ class Controller:
 			await page.keyboard.press(params.keys)
 			msg = f'⌨️  Sent keys: {params.keys}'
 			logger.info(msg)
+			#pdb.set_trace()
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
 		@self.registry.action(
@@ -463,13 +591,14 @@ class Controller:
 			results.append(await self.act(action, browser_context))
 
 			logger.debug(f'Executed action {i + 1} / {len(actions)}')
-			pdb.set_trace()
+			#pdb.set_trace()
 			if results[-1].is_done or results[-1].error or i == len(actions) - 1:
+				
 				break
 
 			await asyncio.sleep(browser_context.config.wait_between_actions)
 			# hash all elements. if it is a subset of cached_state its fine - else break (new elements on page)
-
+		#pdb.set_trace()
 		return results
 
 	@time_execution_sync('--act')
@@ -480,6 +609,7 @@ class Controller:
 				if params is not None:
 					# remove highlights
 					result = await self.registry.execute_action(action_name, params, browser=browser_context)
+					#pdb.set_trace()
 					if isinstance(result, str):
 						return ActionResult(extracted_content=result)
 					elif isinstance(result, ActionResult):
