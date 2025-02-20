@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pdb
 import asyncio
 import base64
 import io
@@ -459,7 +460,7 @@ class Agent:
 		"""Execute the task with maximum number of steps"""
 		try:
 			self._log_agent_run()
-
+			pdb.set_trace()
 			# Execute initial actions if provided
 			if self.initial_actions:
 				result = await self.controller.multi_act(self.initial_actions, self.browser_context, check_for_new_elements=False)

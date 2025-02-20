@@ -1,0 +1,34 @@
+I was capturing follow ups during our call – they follow: Product Questions: 
+What is the premium bonus percentage? We believe it is 7% (not 8%). 
+Premium bonus recapture 
+Are we recapturing only the premium bonus (or premium bonus plus interest on the bonus) using the schedule that is published? 
+What is the formula to calculate the amount of a premium bonus that is removed upon withdrawal? 
+Need more detail on the recapture process (calculations, what needs to be displayed to the client, accounting requirements, etc.). 
+We need to ensure the Contract expresses the recapture clearly. 
+Commission rates are high (10+%) – they seem higher than what Andrei sees in ANW. 
+Is the Product Development Fee paid 1x or is it recurring? 
+Confirm & document that it’s paid outside of FAST (through accounting) like the MYGA.
+I listened to the recording re: e-Delivery.
+I recommend that:
+We make the policy/party decision THEN look at the form and ensure it reflects our decision.
+One version of the e-Delivery form I’ve seen says that the current election replaces all others BUT it doesn’t indicate who the party is that elected it and there is no signature. If we’re storing it at the policy level, the form should state that – we don’t want to state it’s at the party level and not be able to update all of the associated parties (picking “who” is harder than it sounds).
+We store the e-Consent and e-Delivery at the policy level, not the party level.
+It’s safer to store it at the policy level.
+It sounds like the ability to save it at the party level is new or under development in FAST and therefore it’s less likely to be working “perfectly” yet.
+When the 103 import runs, how does FAST determine whether a party already exists? Is it using SSN/TIN
+only
+? Note that we do not collect SSN/TIN for all parties (we don’t have it for POA, Guardian, Trustee, Beneficiary). Hopefully the criteria is more selective than just that since there are scenarios where SSN could pertain to more than one party. For example, when a Trust uses the grantor’s SSN and the grantor is the Annuitant, or a business uses the principal's SSN rather than a TIN, or the minor’s SSN is used as both the annuitant (the minor’s name and DOB) and owner (the adult’s name and DOB)
+We are asking the e-Delivery question on the e-App for each
+policy
+, so I think we should store it at that level.
+It’s more flexible to allow it at the policy level versus party to allow the client to choose.
+Which party’s indicator is used? The Owner’s? What happens when:
+The owner changes? (do we allow that?)
+There is a Trustee(s), POA, Guardian?  (no impact?)
+A person may own multiple policies and have different preferences?
+Lynn Gadue
+Re: Agent Onboarding Packet Working Session
+Wed 2/5
+I’m not on the SuranceBay call either – if you’d like my help with agent contracting, please forward it to me.
+Lynn
+From: Tom Olds <tolds@3clife.info> Date: Tuesday, February 4, 2025 at 8:02 PM To: Donna Curry <dcurry@3clife.info>, Matthew Zidow

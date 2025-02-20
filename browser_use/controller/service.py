@@ -1,3 +1,4 @@
+import pdb
 import asyncio
 import json
 import logging
@@ -462,6 +463,7 @@ class Controller:
 			results.append(await self.act(action, browser_context))
 
 			logger.debug(f'Executed action {i + 1} / {len(actions)}')
+			pdb.set_trace()
 			if results[-1].is_done or results[-1].error or i == len(actions) - 1:
 				break
 

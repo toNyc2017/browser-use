@@ -2,6 +2,7 @@
 Playwright browser on steroids.
 """
 
+import pdb
 import asyncio
 import base64
 import json
@@ -650,6 +651,17 @@ class BrowserContext:
 			if use_vision:
 				screenshot_b64 = await self.take_screenshot()
 			pixels_above, pixels_below = await self.get_scroll_info(page)
+
+
+
+			screenshot_filename = f'full_page_screenshot_{timestamp}.png'
+			screenshot_path = os.path.join('/Users/tomolds/first-agent/browser-use/screenshots', screenshot_filename)
+
+			with open(screenshot_path, 'wb') as f:
+				f.write(base64.b64decode(screenshot_b64))
+
+			print(f'Screenshot saved to {screenshot_path}')
+			pdb.set_trace()
 
 			self.current_state = BrowserState(
 				element_tree=content.element_tree,

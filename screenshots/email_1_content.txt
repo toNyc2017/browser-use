@@ -1,0 +1,16 @@
+I was capturing follow ups during our call – they follow:
+Product Questions:
+ - What is the premium bonus percentage? We believe it is 7% (not 8%).
+ - Premium bonus recapture: Are we recapturing only the premium bonus (or premium bonus plus interest on the bonus) using the schedule that is published?
+ - What is the formula to calculate the amount of a premium bonus that is removed upon withdrawal?
+ - Need more detail on the recapture process (calculations, what needs to be displayed to the client, accounting requirements, etc.).
+ - We need to ensure the Contract expresses the recapture clearly.
+ - Commission rates are high (10+%) – they seem higher than what Andrei sees in ANW.
+ - Is the Product Development Fee paid 1x or is it recurring?
+ - Confirm & document that it’s paid outside of FAST (through accounting) like the MYGA.
+ - Page 9 “Other Features” Payout Doubler: Does this “doubler” pertain only to annuitizations, or to withdrawals and surrenders, or all three?
+ - Confirm if this is a surrender charge waiver, or something else.
+ - Any unique reporting or accounting needs?
+ - Are we planning to launch with the GWLB rider?
+ - If so, what is the Fair Market Value calculation for the GWLB (i.e. actuarial present value of the rider)?
+ - We’ll use that to determine if FAST will calculate the FMV on these policies, or if we’ll calculate it outside of FAST.
