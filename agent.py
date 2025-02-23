@@ -7,6 +7,7 @@ import os
 import asyncio
 import datetime
 import json
+#from datetime import datetime
 
 #print("OPENAI_API_KEY from environment is:", os.getenv("OPENAI_API_KEY"))
 
@@ -49,29 +50,30 @@ class CustomEncoder(json.JSONEncoder):
 #task_text="Compare the price of gpt-4o and DeepSeek-V3"
 #task_text="please tell me the temperature in New York City right now.  also tell me what date is today."
 
-task_text = """Please navigate to https://google.com , wait three seconds and take a screenshot.
+task_text = """Please navigate to https://amazon.com , wait three seconds and take a screenshot.
 and save it to the following folder on the local machine this code is running on : '/Users/tomolds/first-agent/browser-use/screenshots'.
 then wait more seconds and consider the task completed"""
 
 search_person= "Lynn Gadue"
-n_emails = 3
-#task_text = f"""Please navigate to https://outlook.office.com and try to log in.
-#if you need help logging in, please ask user for credentials then proceed. username is tolds@3clife.info. password is annuiTy2024!
-#I will be prompted to execute MFA on my phone. Please wait at least 10 seconds for me to complete the MFA before proceeding.once inside the outlook application
-# please take a screenshot and save it to the following folder on the local machine this code is running on : '/Users/tomolds/first-agent/browser-use/screenshots'.
-#please locate the search box at the top of the outlook window and type in the search box: From:{search_person}
-#then MAKE SURE TO search the email inbox by typing in the search box: From:{search_person}", BUT PLEASE MAKE SURE YOU ARE TYPING IN THE OUTLOOK MAIL SEARCH BOX, NOT A MORE GLOBAL BROWSER SEARCH.
-# take and save another screenshot of the sorted email inbox. also please make sure to tell me the name of the screenshot an printout the path where this is save so I can find it.
-#I really need to be able to find these screenshots in '/Users/tomolds/first-agent/browser-use/screenshots' so please make sure to save them there.
-#please do not exit the process until you have allowed enough time to complete these steps.  but note I think 20 seconds should be enough time to complete these steps once you have entered outlook. 
-#Once you have taken and saved this sreenshot,
-# In sequence, I would like you to do the following for the first {n_emails} emails in the list of emails from LYNNNE GADUE.  If there are less than 5 emails from {search_person}, then please do this for all emails from LYNN GADUE.
-# I want you to OPEN THE FIRST EMAIL FROM {search_person} BY CLICKING ON ITS subject line which should be visible in the middle pane of the email view. 
-# then click inside this email then copy the contents and display those contents in the console via a print() statement. also please save a text file version of the contents to the following folder on the local machine this code is running on : '/Users/tomolds/first-agent/browser-use/screenshots'. 
-# also, between each email text saved to the file, please wirte a line of text telling what date the eamil arrived on, and what number of the {n_emails} this email is.
-# note once you have clicked on an email, and you go back to the email inbox, we need to be sure we are still in the searched list, and we need to be sure we are stepping down the list of searched emails so we are not just capturing the same content over and over again.
- 
-#  """
+n_emails = 15
+task_text = f"""Please navigate to https://outlook.office.com and try to log in.
+if you need help logging in, please ask user for credentials then proceed. username is tolds@3clife.info. password is annuiTy2024!
+I will be prompted to execute MFA on my phone. Please wait at least 10 seconds for me to complete the MFA before proceeding.once inside the outlook application
+ please take a screenshot and save it to the following folder on the local machine this code is running on : '/Users/tomolds/first-agent/browser-use/screenshots'.
+please locate the search box at the top of the outlook window and type in the search box: From:{search_person}
+then MAKE SURE TO search the email inbox by typing in the search box: From:{search_person}", BUT PLEASE MAKE SURE YOU ARE TYPING IN THE OUTLOOK MAIL SEARCH BOX, NOT A MORE GLOBAL BROWSER SEARCH.
+ take and save another screenshot of the sorted email inbox. also please make sure to tell me the name of the screenshot an printout the path where this is save so I can find it.
+I really need to be able to find these screenshots in '/Users/tomolds/first-agent/browser-use/screenshots' so please make sure to save them there.
+please do not exit the process until you have allowed enough time to complete these steps.  but note I think 20 seconds should be enough time to complete these steps once you have entered outlook. 
+Once you have taken and saved this sreenshot,
+ In sequence, I would like you to do the following for the first {n_emails} emails in the list of emails from LYNNNE GADUE.  If there are less than 5 emails from {search_person}, then please do this for all emails from LYNN GADUE.
+ I want you to OPEN THE FIRST EMAIL FROM {search_person} BY CLICKING ON ITS subject line which should be visible in the middle pane of the email view. 
+ then click inside this email then copy the contents and display those contents in the console via a print() statement. also please save a text file version of the contents to the following folder on the local machine this code is running on : '/Users/tomolds/first-agent/browser-use/screenshots'. 
+ also, between each email text saved to the file, please write a line of text telling what date the email arrived on, and what number of the {n_emails} this email is.
+ note once you have clicked on an email, and you go back to the email inbox, we need to be sure we are still in the searched list, and we need to be sure we are stepping down the list of searched emails so we are not just capturing the same content over and over again.
+ one way to be sure we are still in the searched list is to look at the screen and make sure we are looking at a list of emails from {search_person}. If not, then we need to resort the list
+
+  """
 
 
 #task_text = f"""Please navigate to https://outlook.office.com and try to log in.
@@ -149,18 +151,67 @@ n_emails = 3
 
 
 
+#async def main():
+#    agent = Agent(
+#        task = task_text,
+#        llm=llm,
+#        save_conversation_path="/Users/tomolds/first-agent/browser-use/conversations/conversation/agent_history.log"
+#    )
+#    #pdb.set_trace()
+#    result = await agent.run()
+#    print(result)
+#    # after task execution
+#    with open("agent_history.json", "w", encoding="utf-8") as f:
+#        json.dump(agent.history, f, indent=2, cls=CustomEncoder)
+import json
+import datetime
+
+def recursive_sanitize(obj):
+    """
+    Recursively walk through the object.
+    For any dict encountered, if it has a "screenshot" key, set its value to None.
+    """
+    if isinstance(obj, dict):
+        new_obj = {}
+        for key, value in obj.items():
+            # If the key is "screenshot", remove it (or set to None)
+            if key == "screenshot":
+                new_obj[key] = None
+            else:
+                new_obj[key] = recursive_sanitize(value)
+        return new_obj
+    elif isinstance(obj, list):
+        return [recursive_sanitize(item) for item in obj]
+    elif isinstance(obj, tuple):
+        # Convert tuple elements recursively and then keep as tuple.
+        return tuple(recursive_sanitize(item) for item in obj)
+    else:
+        return obj
+
 async def main():
     agent = Agent(
-        task = task_text,
+        task=task_text,
         llm=llm,
         save_conversation_path="/Users/tomolds/first-agent/browser-use/conversations/conversation/agent_history.log"
     )
-    #pdb.set_trace()
     result = await agent.run()
     print(result)
-    # after task execution
-    with open("agent_history.json", "w", encoding="utf-8") as f:
-        json.dump(agent.history, f, indent=2, cls=CustomEncoder)
+    #pdb.set_trace()
+    # Use recursive sanitization on the entire agent.history
+    sanitized_history = recursive_sanitize(agent.history)
+
+    # Create an output object that includes a timestamp and the sanitized history.
+    output_data = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "history": sanitized_history
+    }
+
+    # Generate a unique filename with a timestamp (e.g., agent_history_20250221_172943.json)
+    timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_name = f"agent_history_{timestamp_str}.json"
+
+    with open(file_name, "w", encoding="utf-8") as f:
+        json.dump(output_data, f, indent=2, cls=CustomEncoder)
 
 asyncio.run(main())
 
