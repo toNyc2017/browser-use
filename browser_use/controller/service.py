@@ -28,6 +28,7 @@ from browser_use.controller.views import (
 	AppendToFileAction,
 	SaveFileToLocalAction,
 	TakeAndSaveScreenshotAction,
+	ExtractEmailAction,
 
 )
 from browser_use.utils import time_execution_async, time_execution_sync
@@ -76,6 +77,41 @@ class Controller:
 
 		######  ADDED BY TOM OLDS  2/16/2025
 			
+
+		@self.registry.action('Extract Email Texts', requires_browser=True)
+		async def extract_email_texts(params: ExtractEmailAction, browser: BrowserContext):
+			"""
+			Extracts the innerText of all elements whose aria-label attribute indicates email content.
+			For example, this action finds elements where aria-label contains "Re:".
+			Adjust the CSS selector as needed.
+			"""
+			page: Page = await browser.get_current_page()
+			
+			# Adjust the selector to match the email elements you are interested in.
+			# This example finds any element with an aria-label containing "Re:".
+			email_texts = await page.eval_on_selector_all(
+				'[aria-label]',
+				"""
+				elements => {
+					return elements
+						.filter(el => el.getAttribute('aria-label') && el.getAttribute('aria-label').includes('Re:'))
+						.map(el => el.innerText)
+				}
+				"""
+			)
+			
+			if email_texts is None:
+				email_texts = []
+			
+			msg = f"Extracted {len(email_texts)} email texts."
+			logger.info(msg)
+			# Return an ActionResult with both a summary message and the concatenated email texts.
+			return ActionResult(
+				extracted_content=msg + "\n" + "\n\n".join(email_texts),
+				include_in_memory=True
+			)
+
+
 
 	# Create File Action
 		@self.registry.action('Create File', param_model=CreateFileAction)

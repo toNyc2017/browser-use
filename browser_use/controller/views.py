@@ -20,6 +20,9 @@ class TakeAndSaveScreenshotAction(BaseModel):
     full_page: Optional[bool] = False  # Option to capture the full page
 
 
+class ExtractEmailAction(BaseModel):
+	text: str
+
 class SearchGoogleAction(BaseModel):
 	query: str
 

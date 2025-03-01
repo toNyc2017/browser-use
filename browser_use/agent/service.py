@@ -54,7 +54,9 @@ from browser_use.telemetry.views import (
 from browser_use.utils import time_execution_async
 
 load_dotenv()
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+
+logger = logging.getLogger("agent_logger")
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -75,8 +77,8 @@ def append_history_to_file(history, base_file_path="agent_history_incremental.js
         file_path = f"{name}_{timestamp}{ext}"
 
         # 3. Determine the list of steps:
-        if hasattr(history, "all_results"):
-            steps = history.all_results
+        if hasattr(history, "history"):
+            steps = history.history
         elif isinstance(history, tuple):
             steps = None
             for item in history:
@@ -93,7 +95,7 @@ def append_history_to_file(history, base_file_path="agent_history_incremental.js
             return
 
         # Debug breakpoint to inspect steps
-        pdb.set_trace()  # Remove or comment out once debugging is complete
+        #pdb.set_trace()  # Remove or comment out once debugging is complete
 
         # 4. Function to sanitize a single step (remove screenshot data)
         def sanitize_step(step):
@@ -116,7 +118,8 @@ def append_history_to_file(history, base_file_path="agent_history_incremental.js
         # 5. Sanitize each step.
         new_entries = [sanitize_step(step) for step in steps]
 
-        # 6. Load existing history from file if it exists.
+        #pdb.set_trace()  # Remove or comment out once debugging is complete
+		# 6. Load existing history from file if it exists.
         if os.path.exists(file_path):
             with open(file_path, "r", encoding="utf-8") as f:
                 existing_history = json.load(f)
@@ -132,6 +135,8 @@ def append_history_to_file(history, base_file_path="agent_history_incremental.js
 
     except Exception as e:
         print(f"Error appending to history file: {str(e)}")
+
+
 class Agent:
 	def __init__(
 		self,
@@ -312,13 +317,67 @@ class Agent:
 
 			self.message_manager.add_state_message(state, self._last_result, step_info)
 			input_messages = self.message_manager.get_messages()
+			# Assuming logger is imported or passed in from your driver script.
+			for i, message in enumerate(input_messages):
+				logger.info("Message %d type: %s", i, type(message).__name__)
+				content = message.content
+				if isinstance(content, list):
+					filtered_parts = []
+					for part in content:
+						if isinstance(part, dict) and part.get("type") == "image_url":
+							filtered_parts.append("[screenshot data skipped]")
+						else:
+							filtered_parts.append(part)
+					logger.info("Message %d content: %s", i, filtered_parts)
+				elif isinstance(content, str):
+					if "data:image/png;base64," in content:
+						logger.info("Message %d content: [screenshot data skipped]", i)
+					else:
+						logger.info("Message %d content: %s", i, content)
+				else:
+					logger.info("Message %d content: %s", i, content)
+
+			
+			#for i, message in enumerate(input_messages):
+			#	print(f"Message {i} type: {type(message).__name__}")
+			#	# Assume message.content can be either a string or a list of message parts.
+			#	content = message.content
+			#	if isinstance(content, list):
+			#		# Filter out any parts that are image data.
+			#		filtered_parts = []
+			#		for part in content:
+			#			# If the part is a dict and its type indicates an image, skip it.
+			#			if isinstance(part, dict) and part.get("type") == "image_url":
+			#				filtered_parts.append("[screenshot data skipped]")
+			#			else:
+			#				filtered_parts.append(part)
+			#		print(f"Message {i} content: {filtered_parts}")
+			#	elif isinstance(content, str):
+			#		# If it's a string and contains a base64 image, skip printing it.
+			#		if "data:image/png;base64," in content:
+			#			print(f"Message {i} content: [screenshot data skipped]")
+			#		else:
+			#			print(f"Message {i} content: {content}")
+			#	else:
+			#		print(f"Message {i} content: {content}")
+
+
 			#pdb.set_trace()
+		
+			
+			
 			try:
 				model_output = await self.get_next_action(input_messages)
 				#custom_attributes = [attr for attr in dir(model_output) if not attr.startswith('__')]
 				#attributes = dir(model_output)
 				#model_output.current_state
 				#model_output.action
+				#print(model_output)
+				logger.info("Model output: %s", model_output)
+				
+				
+				
+				
 				#pdb.set_trace()
 				if self.register_new_step_callback:
 					self.register_new_step_callback(state, model_output, self.n_steps)
@@ -334,6 +393,7 @@ class Agent:
 			except Exception as e:
 				# model call failed, remove last state message from history
 				self.message_manager._remove_last_state_message()
+				logger.error("Error getting next action: %s", e)
 				raise e
 
 			result: list[ActionResult] = await self.controller.multi_act(model_output.action, self.browser_context)
@@ -616,7 +676,7 @@ class Agent:
 		system_msg = (
 			f'You are a validator of an agent who interacts with a browser. '
 			f'Validate if the output of last action is what the user wanted and if the task is completed. '
-			f'If the task is unclear defined, you can let it pass. But if something is missing or the image does not show what was requested dont let it pass. '
+			f'If the task is unclearly defined, you can let it pass. But if something is missing or the image does not show what was requested dont let it pass. '
 			f'Try to understand the page and help the model with suggestions like scroll, do x, ... to get the solution right. '
 			f'Task to validate: {self.task}. Return a JSON object with 2 keys: is_valid and reason. '
 			f'is_valid is a boolean that indicates if the output is correct. '

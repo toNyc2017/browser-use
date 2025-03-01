@@ -659,10 +659,10 @@ class BrowserContext:
 			screenshot_filename = f'full_page_screenshot_{timestamp}.png'
 			screenshot_path = os.path.join('/Users/tomolds/first-agent/browser-use/screenshots', screenshot_filename)
 
-			#with open(screenshot_path, 'wb') as f:
-			#	f.write(base64.b64decode(screenshot_b64))
+			with open(screenshot_path, 'wb') as f:
+				f.write(base64.b64decode(screenshot_b64))
 
-			#print(f'Screenshot saved to {screenshot_path}')
+			print(f'Screenshot saved to {screenshot_path}')
 			#pdb.set_trace()
 
 			self.current_state = BrowserState(
