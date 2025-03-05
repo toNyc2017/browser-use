@@ -20,8 +20,19 @@ class TakeAndSaveScreenshotAction(BaseModel):
     full_page: Optional[bool] = False  # Option to capture the full page
 
 
+#class ExtractEmailAction(BaseModel):
+#	text: str
+
+
 class ExtractEmailAction(BaseModel):
-	text: str
+    text: str = ""         # if needed for additional instructions
+    n_emails: int = 30     # default value, which can be overwritten by the agent
+	
+class OutlookEmailScrollAction(BaseModel):
+    n_emails: int = 30       # The expected number of emails (default: 30)
+    scroll_amount: int = 500   # Number of pixels to scroll per action
+    delay: int = 1000          # Delay after scrolling in milliseconds
+
 
 class SearchGoogleAction(BaseModel):
 	query: str

@@ -29,6 +29,7 @@ from browser_use.controller.views import (
 	SaveFileToLocalAction,
 	TakeAndSaveScreenshotAction,
 	ExtractEmailAction,
+	OutlookEmailScrollAction,
 
 )
 from browser_use.utils import time_execution_async, time_execution_sync
@@ -78,40 +79,132 @@ class Controller:
 		######  ADDED BY TOM OLDS  2/16/2025
 			
 
+		#@self.registry.action('Extract Email Texts', requires_browser=True)
+		#async def extract_email_texts(params: ExtractEmailAction, browser: BrowserContext):
+		#	"""
+		#	Extracts the innerText of all elements whose aria-label attribute indicates email content.
+		#	For example, this action finds elements where aria-label contains "Re:".
+		#	Adjust the CSS selector as needed.
+		#	"""
+		#	page: Page = await browser.get_current_page()
+			
+		#	# Adjust the selector to match the email elements you are interested in.
+		#	# This example finds any element with an aria-label containing "Re:".
+		#	email_texts = await page.eval_on_selector_all(
+		#		'[aria-label]',
+		#		"""
+		#		elements => {
+		#			return elements
+		#				.filter(el => el.getAttribute('aria-label') && el.getAttribute('aria-label').includes('Re:'))
+		#				.map(el => el.innerText)
+		#		}
+		#		"""
+		#	)
+			
+		#	if email_texts is None:
+		#		email_texts = []
+			
+		#	msg = f"Extracted {len(email_texts)} email texts."
+		#	logger.info(msg)
+		#	# Return an ActionResult with both a summary message and the concatenated email texts.
+		#	return ActionResult(
+		#		extracted_content=msg + "\n" + "\n\n".join(email_texts),
+		#		include_in_memory=True
+		#	)
+		
+		# In your controller/service.py, register the action:
+		@self.registry.action('Outlook Email Scroll', requires_browser=True)
+		async def outlook_email_scroll(params: OutlookEmailScrollAction, browser: BrowserContext):
+			page: Page = await browser.get_current_page()
+
+			# Convert params to a dict to safely access the values.
+			params_data = params.dict()  # or use params.model_dump() if using Pydantic v2
+			scroll_amount = params_data.get("scroll_amount", 500)
+			delay = params_data.get("delay", 1000)
+
+			# Scroll down the page by the specified amount.
+			await page.evaluate(f"window.scrollBy(0, {scroll_amount})")
+			# Wait for the specified delay to allow content to load.
+			await page.wait_for_timeout(delay)
+
+			msg = f"Scrolled down {scroll_amount} pixels and waited {delay} ms."
+			logger.info(msg)
+			
+			return ActionResult(
+				extracted_content=msg,
+				include_in_memory=True
+			)
+				
+		
 		@self.registry.action('Extract Email Texts', requires_browser=True)
 		async def extract_email_texts(params: ExtractEmailAction, browser: BrowserContext):
 			"""
-			Extracts the innerText of all elements whose aria-label attribute indicates email content.
-			For example, this action finds elements where aria-label contains "Re:".
-			Adjust the CSS selector as needed.
+			Extracts the full email content by:
+			1. Clicking a "Read more" button if present to expand content.
+			2. Scrolling the email container into view.
+			3. Using a broad CSS selector to capture the complete email text.
+			4. Continuously scrolling down until the number of extracted emails meets
+			the target count (params.n_emails, defaults to 30) or no new emails are loaded.
 			"""
 			page: Page = await browser.get_current_page()
 			
-			# Adjust the selector to match the email elements you are interested in.
-			# This example finds any element with an aria-label containing "Re:".
+			# Step 1: Click "Read more" if the button exists.
+			read_more_button = await page.query_selector("button[aria-label*='Read more']")
+			if read_more_button:
+				await read_more_button.click()
+				await page.wait_for_timeout(1000)
+			
+			# Step 2: Define a broad selector for the email container.
+			# Adjust this selector as needed for your page's structure.
+			email_container_selector = "div[role='document'], div.email-content"
+			
+			# Scroll the container into view.
+			email_container = await page.query_selector(email_container_selector)
+			if email_container:
+				await email_container.scroll_into_view_if_needed()
+				await page.wait_for_timeout(500)
+			
+			# Step 3: Initial extraction of email texts.
 			email_texts = await page.eval_on_selector_all(
-				'[aria-label]',
-				"""
-				elements => {
-					return elements
-						.filter(el => el.getAttribute('aria-label') && el.getAttribute('aria-label').includes('Re:'))
-						.map(el => el.innerText)
-				}
-				"""
-			)
+				email_container_selector,
+				"elements => elements.map(el => el.innerText)"
+			) or []
 			
-			if email_texts is None:
-				email_texts = []
+			# Step 4: Determine target count.
+			target_count = params.n_emails if hasattr(params, "n_emails") else 30
+			current_count = len(email_texts)
 			
-			msg = f"Extracted {len(email_texts)} email texts."
+			# Step 5: Scroll down repeatedly until we meet the target or no new emails load.
+			max_attempts = 10  # To avoid an infinite loop.
+			attempts = 0
+			while current_count < target_count and attempts < max_attempts:
+				# Scroll down the window by 500 pixels.
+				await page.evaluate("window.scrollBy(0, 500)")
+				await page.wait_for_timeout(1000)
+				
+				# Re-extract email texts after scrolling.
+				new_texts = await page.eval_on_selector_all(
+					email_container_selector,
+					"elements => elements.map(el => el.innerText)"
+				) or []
+				
+				# Deduplicate by combining the old and new texts.
+				combined_texts = list(set(email_texts + new_texts))
+				if len(combined_texts) == current_count:
+					# No new emails were found.
+					break
+				
+				email_texts = combined_texts
+				current_count = len(email_texts)
+				attempts += 1
+
+			msg = f"Extracted {current_count} email texts."
 			logger.info(msg)
-			# Return an ActionResult with both a summary message and the concatenated email texts.
+			
 			return ActionResult(
 				extracted_content=msg + "\n" + "\n\n".join(email_texts),
 				include_in_memory=True
 			)
-
-
 
 	# Create File Action
 		@self.registry.action('Create File', param_model=CreateFileAction)

@@ -142,13 +142,14 @@ class Agent:
 		self,
 		task: str,
 		llm: BaseChatModel,
+		n_emails: int = 20,
 		browser: Browser | None = None,
 		browser_context: BrowserContext | None = None,
 		controller: Controller = Controller(),
 		use_vision: bool = True,
 		save_conversation_path: Optional[str] = '/Users/tomolds/first-agent/browser-use/conversations/conversation/agent_chat.txt',
 		save_conversation_path_encoding: Optional[str] = 'utf-8',
-		max_failures: int = 3,
+		max_failures: int = 5,
 		retry_delay: int = 10,
 		system_prompt_class: Type[SystemPrompt] = SystemPrompt,
 		max_input_tokens: int = 128000,
@@ -181,6 +182,7 @@ class Agent:
 		self.task = task
 		self.use_vision = use_vision
 		self.llm = llm
+		self.n_emails = n_emails
 		self.save_conversation_path = save_conversation_path
 		self.save_conversation_path_encoding = save_conversation_path_encoding
 		self._last_result = None

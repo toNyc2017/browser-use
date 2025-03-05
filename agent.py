@@ -157,6 +157,15 @@ Finally, once all emails have been processed and saved, use the done action to c
 """
 
 
+task_text = f"""Please navigate to https://outlook.office.com and try to log in.
+if you need help logging in, please ask user for credentials then proceed. username is tolds@3clife.info. password is annuiTy2024!
+I will be prompted to execute MFA on my phone. Please wait at least 10 seconds for me to complete the MFA before proceeding.once inside the outlook application
+Scroll down the Outlook inbox by 500 pixels and take a screenshot" to verify scrolling. Please do this three times.
+please look at the screnshot between each step to make sure that the email box has indeeed scrolled down by 500 pixels.
+"""
+
+
+
 #task_text = f"""Please navigate to https://outlook.office.com and try to log in.
 #if you need help logging in, please ask user for credentials then proceed. username is tolds@3clife.info. password is annuiTy2024!
 #I will be prompted to execute MFA on my phone. Please wait at least 10 seconds for me to complete the MFA before proceeding.once inside the outlook application
@@ -357,7 +366,7 @@ async def main():
     modified_task_text = modify_task_text(task_text, llm)
     print("Modified Task Text:")
     print(modified_task_text)
-    pdb.set_trace()
+    #pdb.set_trace()
     
    
 
@@ -370,6 +379,7 @@ async def main():
         task=task_text,
         #task=modified_task_text,
         llm=llm,
+        n_emails=n_emails,
         save_conversation_path="/Users/tomolds/first-agent/browser-use/conversations/conversation/agent_history.log"
     )
     result = await agent.run()
